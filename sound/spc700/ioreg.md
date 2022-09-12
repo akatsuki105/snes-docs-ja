@@ -1,6 +1,8 @@
 # IOレジスタ
 
-## 00F0h - TEST - Testing functions (W)
+アドレスは、SPC700のメモリ空間のものです。
+
+## 00F0h - TEST - テストレジスタ (W)
 
 ```
   Bit 0    Timer-Enable     (0=Normal, 1=Timers don't work)
@@ -41,7 +43,7 @@ Internal cycles (those that do not access RAM, ROM, nor I/O) are either using th
   Bit 0-7  DSPレジスタデータ (read/write the register selected via Port 00F2h)
 ```
 
-## 00Fxh - CPUIOn - CPU Input and Output Register n (R/W)
+## 00Fxh - CPUIOn - CPU通信レジスタn (R/W, n=0,1,2,3)
 
 ```
   00F4h - CPUIO0
@@ -61,9 +63,13 @@ S-CPUへの出力ポート(書き込み専用)が4つ、S-CPUからの入力ポ�
       Read:  S-CPU -> APU
 ```
 
+S-CPU側からは、`APUIOx`(`2140..2143h`)を通してこのレジスタにアクセスすることができます。
+
+<img src="../../images/sound/com.webp" width="640" />
+
 If the SPC700 writes to an output port while the S-CPU is reading it, the S-CPU will read the logical OR of the old and new values. Possibly the same thing happens the other way around, but the details are unknown?
 
-## 00Fxh - AUXIOn - External I/O Port Pn (R/W)
+## 00Fxh - AUXIOn - External I/O Port Pn (R/W, n=4,5)
 
 使用されてはいませんでした。
 
