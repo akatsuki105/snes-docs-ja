@@ -4,6 +4,8 @@
 
 ## 00F0h - TEST - テストレジスタ (W)
 
+プロセッサ自体の動作を変更します。
+
 ```
   Bit 0    Timer-Enable     (0=Normal, 1=Timers don't work)
   Bit 1    RAM Write Enable (0=Disable/Read-only, 1=Enable SPC700 & S-DSP writes)
@@ -17,18 +19,18 @@ Default setting is 0Ah, software should never change this register. Normal memor
 
 Internal cycles (those that do not access RAM, ROM, nor I/O) are either using the RAM or I/O access time (see notes at bottom of this chapter).
 
-## 00F1h - CONTROL - Timer, I/O and ROM Control (W)
+## 00F1h - CONTROL - 制御レジスタ (W)
 
 リセット時には `0xB0` になります。
 
 ```
-  Bit 0-2  Timer 0-2 Enable (0=Disable, set TnOUT=0 & reload divider, 1=Enable)
+  Bit 0-2  タイマー0~2有効化フラグ (0=無効, 1=有効)
+    タイマーnを無効化した場合、TnOUTがゼロクリアされ、dividerがリロードされます。
   Bit 3    不使用
-  Bit 4    Reset Port 00F4h/00F5h Input-Latches (0=No change, 1=Reset to 00h)
-  Bit 5    Reset Port 00F6h/00F7h Input-Latches (0=No change, 1=Reset to 00h)
-           Note: The CPUIO inputs are latched inside of the SPC700 (at time when the Main CPU writes them), above two bits allow to reset these latches.
+  Bit 4    00F4h/00F5hのSNESからの入力値をゼロクリアする (1にしてる間ずっと)
+  Bit 5    00F6h/00F7hのSNESからの入力値をゼロクリアする (1にしてる間ずっと)
   Bit 6    不使用
-  Bit 7    ROM at FFC0h-FFFFh (0=RAM, 1=ROM) (writes do always go to RAM)
+  Bit 7    アドレス FFC0h-FFFFh からの読み取り時に何を返すか (0=ARAM, 1=ブートROM) (書き込みは常にARAM)
 ```
 
 ## 00F2h - DSPADDR - DSPレジスタ番号 (R/W)
@@ -69,46 +71,25 @@ S-CPU側からは、`APUIOx`(`2140..2143h`)を通してこのレジスタにア�
 
 If the SPC700 writes to an output port while the S-CPU is reading it, the S-CPU will read the logical OR of the old and new values. Possibly the same thing happens the other way around, but the details are unknown?
 
-## 00Fxh - AUXIOn - External I/O Port Pn (R/W, n=4,5)
-
-使用されてはいませんでした。
+## 00Fxh - AUXIOn - 補助レジスタn (R/W, n=4,5)
 
 ```
   00F8h - AUXIO4 (S-SMP Pins 34-27)
   00F9h - AUXIO5 (S-SMP Pins 25-18)
 ```
 
-Writing changes the output levels. Reading normally returns the same value as the written value; unless external hardware has pulled the pins LOW or HIGH. Reading from AUXIO5 additionally produces a short /P5RD read signal (Pin17).
+SPC700の AUXIOn に割り当てられたピンは、スーファミの場合、何にも接続されていないため、レジスタは実質的に汎用レジスタのように機能し、自由に使うことが可能です。
 
 ```
-  Bit 0-7  Input/Output levels (0=Low, 1=High)
+  Bit 0-7  データ
 ```
 
-In the SNES, these pins are unused (not connected), so the registers do effectively work as if they'd be "RAM-like" general purpose storage registers.
+## 00Fxh - TnDIV - Dividerレジスタn (W, n=0,1,2)
 
-## 00Fxh - TnDIV - Timer n Divider (W)
+[タイマー](timer.md)のページを参照してください。
 
-```
-  00FAh - T0DIV (for  8000Hz clock source)
-  00FBh - T1DIV (for  8000Hz clock source)
-  00FCh - T2DIV (for 64000Hz clock source)
-```
+## 00Fxh - TnOUT - タイマーカウンタn (R, n=0,1,2)
 
-```
-  Bit 0-7  Divider (01h..FFh=Divide by 1..255, or 00h=Divide by 256)
-```
-
-If timers are enabled (via Port 00F1h), then the TnOUT registers are incremented at the selected rate (ie. the 8kHz or 64kHz clock source, divided by the selected value).
-
-## 00Fxh - TnOUT - Timer n Output (R)
-
-```
-  00FDh/00FEh/00FFh - T0OUT/T1OUT/T2OUT
-```
-
-```
-  Bit 0-3  Incremented at the rate selected via TnDIV (reset to 0 after reading)
-  Bit 4-7  不使用 (常に0)
-```
+[タイマー](timer.md)のページを参照してください。
 
 

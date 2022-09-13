@@ -17,3 +17,4 @@ APUとスーファミ本体のCPUは、4つのポート(IOレジスタ)を介し
 ## 参考
 
 - [SPC700 & ARAM - Super Nintendo Entertainment System Features Pt. 10](https://youtu.be/n5eTOGZdnTU)
+- [SNES Audio System Overview - SPC700 Series pt. 1](https://youtu.be/zrn0QavLMyo)

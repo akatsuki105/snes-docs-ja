@@ -76,6 +76,8 @@
 - [概要](sound/)
     - [レジスタ](sound/ioreg.md)
     - [SPC700](sound/spc700/)
+        - [IOレジスタ](sound/spc700/ioreg.md)
+        - [タイマー](sound/spc700/timer.md)
 
 ### カートリッジ
 
