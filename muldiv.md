@@ -1,7 +1,7 @@
 # [乗算・除算](https://problemkaputt.de/fullsnes.htm#snesmathsmultiplydivide)
 
 >**Note**  
-> ここでは サイクル = クロックサイクル とします。
+> ここでは サイクル = CPUサイクル とします。
 
 ## 4202h - WRMPYA - 被乗数レジスタ (W)
 
