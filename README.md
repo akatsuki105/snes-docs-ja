@@ -88,13 +88,6 @@
 - [キー入力](keypad/joypad.md)
 - [キー入力(信号単位)](keypad/signal.md)
 
-### その他
-
-#### コードリーディング
-
-- [bsnes-emu/bsnes](others/bsnes/README.md)
-- [snes9xgit/snes9x](others/snes9x/README.md)
-
 ## 関連するレポジトリ
 
 - [gb-docs-ja](https://github.com/pokemium/gb-docs-ja): GameBoyについて
@@ -104,6 +97,4 @@
 ## 参考記事
 
 - [Fullsnes - nocash SNES hardware specifications](https://problemkaputt.de/fullsnes.htm)
-- [Super Nintendo Architecture](https://www.copetti.org/writings/consoles/super-nintendo/)
 - [Wikipedia - スーパーファミコン](https://ja.wikipedia.org/wiki/%E3%82%B9%E3%83%BC%E3%83%91%E3%83%BC%E3%83%95%E3%82%A1%E3%83%9F%E3%82%B3%E3%83%B3)
-
