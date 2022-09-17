@@ -92,12 +92,16 @@ BGの場合、16x16なので、8x8のタイルが2x2集まって構成されて�
 
 となります。
 
-The hex-tile numbers could be thus thought of as "Yyxh", with "x" being the 4bit x-index, and "Yy" being the y-index in the array. For OBJ tiles, the are no carry-outs from "x+1" to "y", nor from "y+1" to "Y". Whilst BG tiles are processing carry-outs. For example:
+ただし、OBJタイルはタイル番号の桁上がりがないことに注意してください。
 
 ```
-  16x16 BG Tile 1FFh     16x16 OBJ Tile 1FFh
-  Tile1ffh Tile200h      Tile1ffh Tile1f0h
-  Tile20fh Tile210h      Tile10fh Tile100h
+  16x16 BGタイル:
+    1FFh, 200h
+    20Fh, 210h
+
+  16x16 OBJタイル:
+    1FFh, 1F0h
+    10Fh, 100h
 ```
 
 ## 🛎 VRAMへのアクセス
