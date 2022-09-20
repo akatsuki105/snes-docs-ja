@@ -42,7 +42,7 @@
 ### メモリ
 
 - [メモリマップ](memory/)
-- [制御レジスタ](memory/control.md)
+- [ウェイトステート2](memory/ws2.md)
 - [WRAMへのレジスタ経由のアクセス](memory/wram.md)
 
 ### グラフィック
@@ -59,6 +59,8 @@
     - [OAM](video/obj/oam.md)
     - [OAMへのレジスタ経由のアクセス](memory/oam.md)
     - [優先度](video/obj/priority.md)
+    - [タイルサイズ](video/obj/obsel.md)
+    - [ベースアドレス](video/obj/obsel.md)
 - [VRAM](video/vram.md)
     - [タイルデータ](video/vram.md#-8x8タイルデータ-bg-and-obj)
     - [タイルマップ](video/bg/bgmap.md)

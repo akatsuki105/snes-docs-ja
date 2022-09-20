@@ -8,11 +8,11 @@
   Bit 7     FBlankフラグ (FBlank = Forced blank, 0=何もしない, 1=画面を真っ黒に)
 ```
 
-通常時は VRAM,OAM,CGRAM には VBlank 中のみアクセスできますが、FBlank中は自由にアクセスできます。
+通常時は VRAM,OAM,CGRAM には VBlank中 のみアクセスできますが、FBlank中 は自由にアクセスできます。
 
 FBlankであったとしても、TVは Vsync/Hsync の信号を受け取り続けます。(結果として、真っ黒な画面を描画し続けます) 
 
-同様にCPUも FBlankであったとしても、HBlank/VBlank の信号を受け取り続け、(有効化されている場合は)NMIs, IRQs, HDMAs も生成され続けます。
+同様にCPUも FBlank であったとしても、HBlank/VBlank の信号を受け取り続け、(有効化されている場合は)NMIs, IRQs, HDMAs も生成され続けます。
 
 ```
   Forced blank doesn't apply immediately... so one must wait whatever
