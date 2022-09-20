@@ -22,7 +22,6 @@
 - [I/Oレジスタの一覧](ioreg.md)
 - [乗算・除算](muldiv.md)
 - [サイクル](cycle.md)
-- [DMA/HDMA](memory/dma.md)
 - [オープンバス](openbus.md)
 - [割り込み](interrupt/)
     - [IRQ](interrupt/irq.md)
@@ -44,6 +43,9 @@
 - [メモリマップ](memory/)
 - [ウェイトステート2](memory/ws2.md)
 - [WRAMへのレジスタ経由のアクセス](memory/wram.md)
+- [DMA](memory/dma/)
+    - [HDMA](memory/dma/hdma.md)
+    - [レジスタ](memory/dma/ioreg.md)
 
 ### グラフィック
 
