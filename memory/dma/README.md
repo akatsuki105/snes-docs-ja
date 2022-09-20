@@ -25,3 +25,4 @@ DMA転送は Direct Memory Access転送 の略で、CPUを介さずに周辺機�
 
 - [DMA & HDMA - Super Nintendo Entertainment System Features Pt. 07](https://youtu.be/K7gWmdgXPgk)
 - [SNES on FPGA](https://pgate1.at-ninja.jp/SNES_on_FPGA/): HDMAの説明部分
+- [Grog's Guide to DMA and HDMA on the SNES](https://wiki.superfamicom.org/grog's-guide-to-dma-and-hdma-on-the-snes)
