@@ -78,11 +78,19 @@ HDMAでは、テーブル自体も間接的にアドレス指定されたデー�
 
 `(H, V)=(6, 0)`のときに、アクティブなHDMAチャネルのHDMAレジスタに対して、リロードが起きます。
 
-TODO
+リロード中はCPUが停止します。直接HDMAなら 26サイクル、間接HDMAなら 42サイクル 停止します。<sup>[3](#indirect-reload)</sup>
+
+**リロードの内容**
+
+```
+  A2Ax に A1Tx の値をコピー
+  NTRLx に 現在のテーブルの内容をコピー
+  間接HDMAの場合は間接アドレスをロード
+```
 
 ## 注釈
 
-<sup id="fblank">1: 転送は FBlank中 でも実行されます。</sup>
-
-<sup id="hdma">2: 1回のHBlankで、最大4バイトまでです。</sup>
+<sup id="fblank">1: 転送は FBlank中 でも実行されます。</sup>  
+<sup id="hdma">2: 1回のHBlankで、最大4バイトまでです。</sup>  
+<sup id="indirect-reload">3: 直接HDMAの処理に加えて、間接アドレスのロードに16サイクルを余計に必要とするため</sup>
 
