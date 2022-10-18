@@ -1,20 +1,20 @@
-# Color-Math
+# カラーマス
 
-ColorMathはスーファミが、メイン画面、サブ画面、ウィンドウなどから実際の1枚の画面を生成するときに行う一連の処理のことです。
+カラーマス(Color Math) はスーファミが、メイン画面、サブ画面、ウィンドウなどから実際の1枚の画面を生成するときに行う一連の処理のことです。
 
-ColorMathを使うと色々な視覚効果を生み出すことができます。例えば、スクリーン加算は光が当たっている演出を、スクリーン平均化では半透明の演出(水中など)が可能です。
+カラーマスを使うと色々な視覚効果を生み出すことができます。例えば、スクリーン加算は光が当たっている演出を、スクリーン平均化では半透明の演出(水中など)が可能です。
 
-## 2130h - CGWSEL - ColorMath制御レジスタA (W)
+## 2130h - CGWSEL - カラーマス制御レジスタA (W)
 
 ```
   Bit 0    Direct Color (for 256-color BGs)  (0=Use Palette, 1=Direct Color)
   Bit 1    Sub Screen BG/OBJ Enable    (0=No/Backdrop only, 1=Yes/Backdrop+BG+OBJ)
   Bit 2-3  不使用
-  Bit 4-5  ColorMath有効化       (0=Always, 1=MathWindow, 2=NotMathWin, 3=Never)
+  Bit 4-5  カラーマス有効化       (0=Always, 1=MathWindow, 2=NotMathWin, 3=Never)
   Bit 6-7  Force Main Screen Black (3=Always, 2=MathWindow, 1=NotMathWin, 0=Never)
 ```
 
-## 2131h - CGADSUB - ColorMath制御レジスタB (W)
+## 2131h - CGADSUB - カラーマス制御レジスタB (W)
 
 ```
   Bit 7    Color Math Add/Subtract        (0=Add; Main+Sub, 1=Subtract; Main-Sub)
@@ -52,7 +52,7 @@ This 8bit port allows to manipulate some (or all) bits of a 15bit RGB value. Exa
 The Sub Screen Backdrop Color is used when all sub screen layers are disabled or transparent, in this case the "Div2" Half Color Math isn't applied (ie. 2131h.Bit6 is ignored); there is one exception: If "Sub Screen BG/OBJ Enable" is off (2130h.Bit1=0), then the "Div2" isn't forcefully ignored.
 For a FULLY TRANSPARENT backdrop: Set this register to Black (adding or subtracting black has no effect, and, with "Div2" disabled/ignored, the raw Main screen is displayed as is).
 
-## Color Math
+## カラーマス
 
 Color Math can be disabled by setting 2130h.Bit4-5, or by clearing 2131h.Bit0-5. When it is disabled, only the Main Screen is displayed, and the Sub Screen has no effect on the display.
 

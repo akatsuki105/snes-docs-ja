@@ -70,6 +70,8 @@
 - [パレット](video/palette.md)
     - [パレットへのレジスタ経由のアクセス](memory/palette.md)
     - [ダイレクトカラーモード](video/palette.md#ダイレクトカラーモード)
+- [ウィンドウ](video/window.md)
+- [カラーマス](video/colormath.md)
 - [乗算](video/mul.md)
 - [描画サイクル](video/scanline.md)
     - [Hカウンタ](video/scanline.md)
