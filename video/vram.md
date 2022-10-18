@@ -4,7 +4,7 @@
 
 VRAMは BGマップ と　タイルデータ を保持しています。
 
-BGマップが配置されるアドレスは [BGnSC](./control.md) で、タイルデータが配置されるアドレスは [BGNBA](./control.md) で設定します。
+BGマップが配置されるアドレスは [BGnSC](./bg/control.md) で、タイルデータが配置されるアドレスは [BGNBA](./bg/control.md) で設定します。
 
 ## 🗺 BGマップ
 
