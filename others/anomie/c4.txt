@@ -1,0 +1,675 @@
+=============================================================================
+ Anomie's C4 Chip Doc
+ $Revision: 1157 $
+ $Date: 2007-07-12 16:39:41 -0400 (Thu, 12 Jul 2007) $
+ <anomie@users.sourceforge.net>
+=============================================================================
+
+C4 info
+========
+
+The C4 chip maps its registers and memory at $6000-$7fff in banks $00
+through $3f. Known portions of the memory space are:
+ $6000-$6bff: Generic RAM
+ $7f40-$7f47: See below
+ $7f48:       Unknown, always seems to be 01
+ $7f4c:       ??? (seems to be cleared for wireframe and lines, set for OAM)
+ $7f4d:       Subcommand specifier for command 00
+ $7f4e:       Unknown, always seems to be 00
+ $7f4f:       Command specifier, when this is written the C4 does something
+ $7f5e:       Bit 6 seems to be set when the C4 is working, and clear otherwise
+ $7f80-$7faf?: A number of 3-byte registers
+
+Certain registers are 'protected' by waiting for bit 6 of $7f5e to be 0. In
+particular, in MMX2 a single subroutine is used for activation of all C4
+commands, which does approximately the following:
+ protect using $7f5e
+ disable NMI and timers
+ write the subcommand to $7f4d
+ write #$00 to $7f4e
+ write an unknown value (typically 1) to $7f48
+ protect using $7f5e
+ write the command to $7f4f
+ protect using $7f5e
+ re-enable NMI and timers
+
+$7f40-$7f47 are used to load data from RAM. The registers are as follows:
+ $7f40-2: Source address
+ $7f43-4: Count
+ $7f45-6: Dest address, so far always $6600
+ $7f47:   Begin transfer (protect before and after with $7f5e)
+
+
+C4 Commands
+===========
+
+ 00: Sprite functions
+ 01: Draw wireframe
+ 05: Propulsion (?)
+ 0d: Set vector length
+ 10: Convert polar coordinates to rectangular
+ 13: Convert polar coordinates to rectangular
+ 15: Pythagorean
+ 1f: atan
+ 22: Trapaziod
+ 25: Multiply
+ 2d: Transform Coords
+ 40: Sum (test)
+ 54: Square (test)
+ 5c: Immediate Reg (test)
+ 89: Immediate ROM (test)
+
+In addition to the four marked "test", there are a number of other testing
+commands: if $7f4d is $0e, then any command with bits 00????00 will write
+command>>2 to $7f80.
+
+
+00: Sprite functions
+--------------------
+
+  When $00 is written to $7f4f, the subfunction specified in $7f4d is
+  performed.
+
+  00: Build OAM
+  03: Scale/Rotate
+  05: Transform Lines
+  07: Scale/Rotate
+  08: Draw wireframe
+  0b: Disintergrate
+  0c: Wave
+
+ 00: Build OAM
+  
+  Converts a description of a large composite sprite into OAM-like data.
+
+  Input:
+    $6220+:  Composite sprite info table
+    $6620:   Number of composite sprites
+    $6621-2: global X offset (signed)
+    $6623-4: global Y offset (signed)
+    $6625:   ??? (always 0?)
+    $6626:   First sprite to write
+    $6627-8: ??? ($6626 << 2, OAM offset of first sprite?)
+    $6629:   ??? ($6626 >> 2, OAM table 2 offset of first sprite - 0x200?)
+
+  Output:
+    $6000-$621f: OAM image
+
+  Composite sprite info table begins at $6220
+  Composite sprite info: 16 bytes
+    +00-1: Sprite X position (signed)
+    +02-3: Sprite Y position (signed)
+    +04:   Sprite attribute byte
+           bit 0: OAM Name high bit
+           bits 1-3: palette
+           bits 4-5: prio)
+           - XXX: Are bits 6 and 7 unused, or what?
+    +05:   OAM Name
+    +06:   Sprite attribute byte 2
+           bit 6: x flip bit
+           bit 7: y flip bit
+           - XXX: Are bits 0-5 unused, or what?
+    +07-9: Pointer to OAM sprite data: bank in +09, addr in +07 and +08
+    +0a-f: unused
+
+  OAM sprite data in ROM:
+    +00:   Number of sprites this composite uses
+           - If 0, only one sprite and all parameters below are assumed 0
+             except Large size sprite bit is assumed 1.
+    +01:   bit 5: Large size sprite bit
+           bit 6: x flip bit toggle
+           bit 7: y flip bit toggle
+    +02:   X offset diff for this sprite (signed)
+    +03:   Y offset diff for this sprite (signed)
+    +04:   OAM Name diff
+    [repeat +01-4 for the number of sprites specified]
+
+  OAM Ram is constructed in a $220-byte buffer beginning at $6000.
+  
+  All sprites beginning with that specified by $6626 will be written. They
+  are first 'cleared' by setting the Y position of these sprites to $e0 in
+  the pseudo-OAM at $6000-$621f. Then the composite sprite structures are moved
+  through sequentially until either we run out of structures or we run out of
+  OAM.
+
+  For each sprite, we set OAM as follows:
+   X     = (Sprite X position) - (global X offset) + (X offset diff*)
+   Y     = (Sprite Y position) - (global Y offset) + (Y offset diff*)
+   Name  = ((OAM Name) + (OAM Name diff)) & $ff
+           XXX: is the high bit taken from either sprite attribute byte?
+   VFlip = (y flip bit) xor (y flip bit toggle)
+   HFlip = (x flip bit) xor (x flip bit toggle)
+   Prio  = Sprite attribute byte prio
+   Pal   = Sprite attribute byte palette
+   Size  = Large size sprite bit
+   * NOTE: X/Y offset diff is instead subtracted if x/y flip bit is set.
+     In this case, either 8 or 16 is also subtracted, depending on the Large
+     size sprite bit.
+
+ 03: Scale/Rotate
+ 
+  Beginning with a 4-bit image in $6600, scales and rotates it, converts from
+  packed-pixel to bitplane, and outputs it to $6000.
+
+  Input:
+    $6600+:  4-bit packed-pixel image
+    $7f80-1: Rotation angle 0-512
+    $7f82:   ??? (MSB of above?)
+    $7f83-5: ??? (center of rotation X? always seems to be half the width)
+    $7f86-8: ??? (center of rotation Y? always seems to be half the height)
+    $7f89:   Width
+    $7f8a-b: ??? (MSBs of above?)
+    $7f8c:   Height
+    $7f8d-e: ??? (MSBs of above?)
+    $7f8f-0: X scale factor 0bbb.bbbbbbbbbbbb
+    $7f91:   ??? (MSB of above?)
+    $7f92-3: Y scale factor 0bbb.bbbbbbbbbbbb
+    $7f94:   ??? (MSB of above?)
+    $7f95:   ??? (Seems to correspond with the first row of tiles actually read)
+    $7f96:   ??? (Seems to correspond with the amount of data read)
+    $7f97:   ??? (always #$00?)
+
+  Output:
+    $6000+:  Transformed image in normal snes bitplane format
+
+  To determine the source coordinate for an output coordinate:
+   / Sx \   / Cx \   / Xs*cos(R) -Ys*sin(R) \   / Ox - Cx \
+   |    | = |    | + |                      | * |         |
+   \ Sy /   \ Cy /   \ Xs*sin(R)  Ys*cos(R) /   \ Oy - Cy /
+
+    Ox/Oy = Output coord X and Y
+    Sx/Sy = Source coord X and Y
+    Cx/Cy = Rotation center X and Y
+    Xs/Ys = X and Y scale factors
+    R     = rotation angle
+  Source coords outside the source image are color 0.
+ 
+ 05: Transform Lines
+ 
+  Converts a list of points (at $6000) and a list of vertex-pairs (at $6b02) to
+  a list of distance-and-directions at $6600. It also writes the transformed X
+  and Y coordinates back the list of points at $6000.
+
+  Input:
+    $6000+:  List of points
+    $6b00-1: number of lines
+    $6b02+:  List of vertex-pairs
+    $7f80-1: number of vertex-pairs
+    $7f82:   ??? (MSB of above?)
+    $7f83:   X rotation
+    $7f84-5: ??? (MSBs of above?)
+    $7f86:   Y rotation
+    $7f87-8: ??? (MSBs of above?)
+    $7f89:   Z rotation
+    $7f8a:   ??? (MSBs of above? Perspective factor?)
+    $7f8b:   ??? (MSB of above?)
+    $7f8c:   Scale factor
+    $7f8d-e: ??? (MSBs of above?)
+
+  Output:
+    $6000+:  Transformed points (X and Y)
+    $6600+:  List of distance-and-directions
+
+  Each entry in the list of points is 16 bytes:
+   +0:   fractional part of X?
+   +1-2: X coord (little-endian, oddly enough)
+   +4:   fractional part of Y?
+   +5-6: Y coord
+   +8:   fractional part of Z?
+   +9-a: Z coord
+
+  Each entry in the list of vertex-pairs is 2 bytes:
+   +0:   index of point 1
+   +1:   index of point 2
+
+  The points should be transformed as normal, except that the $95 is
+  subtracted from the Z coordinate before rotation, and a perspective effect
+  is generated by multiplying the output X and Y by $95/($90*(Z+$95))
+
+  Each entry in the list of distance-and-directions is 8 bytes:
+   +0-1:  Distance
+   +2-3:  delta-X * 256
+   +4:    ??? (MSB?)
+   +5-6:  delta-Y * 256
+   +7:    ??? (MSB?)
+
+  Note that either delta-X or delta-Y is 1, and the other is <= 1.
+
+  Basically, transform all the points, then go over the list of vertex-pairs
+  and generate the distance-and-directions.
+
+ 07: Scale/Rotate
+ 
+  Beginning with a 4-bit packed-pixel image, scales and rotates it, converts
+  from packed-pixel to bitplane, and outputs it to $6000. Note that 2 tiles are
+  left blank at the end of each row, otherwise it's pretty much the same as 03
+  Scale/Rotate.
+
+  Input:
+    $6600+:  4-bit packed-pixel image
+    $7f80-1: Rotation angle 0-512
+    $7f82:   ??? (MSB of above?)
+    $7f83-5: ??? (center of rotation X? always seems to be half the width)
+    $7f86-8: ??? (center of rotation Y? always seems to be half the height)
+    $7f89:   Width
+    $7f8a-b: ??? (MSBs of above?)
+    $7f8c:   Height
+    $7f8d-e: ??? (MSBs of above?)
+    $7f8f-0: X scale factor 0bbb.bbbbbbbbbbbb
+    $7f91:   ??? (MSB of above?)
+    $7f92-3: Y scale factor 0bbb.bbbbbbbbbbbb
+    $7f94:   ??? (MSB of above?)
+    $7f95:   ??? (Seems to correspond with the first row of tiles actually read)
+    $7f96:   ??? (Seems to correspond with the amount of data read)
+    $7f97:   ??? (always #$00?)
+
+  Output:
+    $6000+:  Transformed image in normal snes bitplane format
+
+  To determine the source coordinate for an output coordinate:
+   / Sx \   / Cx \   / Xs*cos(R) -Ys*sin(R) \   / Ox - Cx \
+   |    | = |    | + |                      | * |         |
+   \ Sy /   \ Cy /   \ Xs*sin(R)  Ys*cos(R) /   \ Oy - Cy /
+
+    Ox/Oy = Output coord X and Y
+    Sx/Sy = Source coord X and Y
+    Cx/Cy = Center X and Y
+    Xs/Ys = X and Y scale factors
+    R     = rotation angle
+  Source coords outside the source image are color 0.
+
+ 08: Draw wireframe
+
+  Renders a 4-color wireframe object into $6300-$6bff. Thus, if you want to
+  use this as a sprite, you'll have to fill in the two missing bitplanes
+  yourself.
+
+  Input:
+    $6295:   Number of lines in the object
+    $6296:   ??? High byte of # of lines?
+    $7f80-2: Pointer to the list of line structures
+    $7f86:   X rotation
+    $7f87:   Y rotation
+    $7f88:   Z rotation
+    $7f8f:   ??? (fractional part of scale factor?)
+    $7f90:   Scale factor for the figure
+    $7f91:   ??? (MSB of scale factor?)
+    $7fa4-6: ??? (always 001000)
+
+  Output:
+    $6300+:  Rendered image in normal snes bitplane format
+
+  The line structure is 5 bytes:
+   +0-1: Pointer to point 1 data, in bigendian format
+   +2-3: Pointer to point 2 data, in bigendian format
+   +4:   Color for this line, 0-3
+
+  The point structure is simple, 6 bytes:
+   +0-1: X coordinate, in bigendian format
+   +2-3: Y coordinate, in bigendian format
+   +4-5: Z coordinate, in bigendian format
+
+  Basically, just iterate over the lines. Take the two points, transform
+  them as specified, throw away the Z after transformation, and draw the
+  line in the given color into $6300+ (clipped to box 96 pixels (12 tiles)
+  on a side).
+
+0b: Disintegrate
+
+  This "disintegrates" a sprite. The effect is that of inserting rows/columns
+  of color 0 (transparent) in between each row/column of the actual image.
+  The source sprite (4-bit packed pixel) is loaded from $6600, and the
+  disintegrated sprite (normal snes format) is output to $6000.
+  
+  Input:
+    $6600+:  4-bit packed-pixel image
+    $7f80-1: ??? (Center X?)
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: ??? (Center Y?)
+    $7f85:   ??? (MSB of above?)
+    $7f86-7: X scale factor (bbbbbbbb.bbbbbbbb format)
+    $7f88:   ??? (MSB of above?)
+    $7f89:   Width
+    $7f8a-b: ??? (MSBs of above?)
+    $7f8c:   Height
+    $7f8d-e: ??? (MSBs of above?)
+    $7f8f-0: Y scale factor (bbbbbbbb.bbbbbbbb format)
+    $7f91:   ??? (MSB of above?)
+
+  Output:
+    $6000+:  Transformed image in normal snes bitplane format
+
+  Basically, just do the inverse of a normal scaling operation with the origin
+  at the center. IOW, instead of taking each pixel of the destination and
+  mapping it into the source, take each pixel of the source and map to the
+  destination, leaving all extra destination pixels 0.
+
+0c: Wave
+
+  Generates a 4-color 32x5-tile wave at $6000. This, if you want to use this in
+  a 4-bit graphics plane, you'll need to supply the other 2 planes yourself.
+
+  Input:
+    $6a00-f: even dither tile
+    $6a10-f: odd dither tile
+    $6b00+:  wave depth table, 128 bytes
+    $7f80-2  ??? (always the [$7f83]th depth entry?)
+    $7f83:   starting offset into wave depth table
+    $7f84-5  ??? (unused MSBs of above?)
+
+  Output:
+    $6000+:  Rendered image in normal snes bitplane format
+ 
+  The top pixel of each column is depth -24, the bottom is 16. For all pixels
+  deeper than the wave depth, the pixel is color 2. For all pixels at or above
+  the wave depth and less than 8 above the wave depth, the appropriate pixel is
+  chosen from the appropriate dither tile. For pixels more than 8 above the
+  wave depth, the color is 0.
+
+01: Draw wireframe
+------------------
+
+  Renders a 4-color wireframe object into $6300-$6bff. The main (only?)
+  difference between this and the sprite wireframe function is that this
+  clears the buffer before rendering.
+
+  Input:
+    $6295:   Number of lines in the object
+    $6296:   ??? High byte of # of lines?
+    $7f80-2: Pointer to the list of line structures
+    $7f86:   X rotation
+    $7f87:   Y rotation
+    $7f88:   Z rotation
+    $7f8f:   ??? (fractional part of scale factor?)
+    $7f90:   Scale factor for the figure
+    $7f91:   ??? (MSB of scale factor?)
+    $7fa4-6: ??? (always 001000)
+
+  Output:
+    $6300+:  Rendered image in normal snes bitplane format
+
+  The line structure is 5 bytes:
+   +0-1: Pointer to point 1 data, in bigendian format
+   +2-3: Pointer to point 2 data, in bigendian format
+   +4:   Color for this line, 0-3
+
+  The point structure is simple, 6 bytes:
+   +0-1: X coordinate, in bigendian format
+   +2-3: Y coordinate, in bigendian format
+   +4-5: Z coordinate, in bigendian format
+
+  Basically, just iterate over the lines. Take the two points, transform
+  them as specified, throw away the Z after transformation, and draw the
+  line in the given color into $6300+ (clipped to box 96 pixels (12 tiles)
+  on a side).
+
+05: Propulsion (?)
+------------------
+
+  Input:
+    $7f80:   ??? (fractional part of A?)
+    $7f81-2: input (A)
+    $7f83-4: input (B)
+    $7f82:   ??? (MSB of above?)
+
+  Output:
+    $7f80-1: output (O)
+    $7f82:   ??? (MSB of above?)
+
+  I'm not sure what exactly this is doing, but it seems to be:
+    O=(0x10000/B*A)>>8
+
+0d: Set vector length
+---------------------
+
+  This takes an XY vector and a length, and outputs the new vector pointing in
+  the same direction but with the new length.
+
+  Input:
+    $7f80-1: X
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: Y
+    $7f85:   ??? (MSB of above?)
+    $7f86-7: length
+    $7f88:   ??? (MSB of above?)
+
+  Output:
+    $7f89-a: outX
+    $7f8b:   ??? (MSB of above?)
+    $7f8c-d: outY
+    $7f8e:   ??? (MSB of above?)
+  
+  Basically:
+    outX = X * length / sqrt(X**2 + Y**2) * 0.98
+    outY = Y * length / sqrt(X**2 + Y**2) * 0.99
+
+10: Convert polar to rectangular
+--------------------------------
+
+  This is really much like $13, except it doesn't do the decimal portion.
+
+  Input:
+    $7f80-1: angle
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: length
+    $7f85:   ??? (MSB of above?)
+
+  Output:
+    $7f86-8: output X
+    $7f89-b: output Y
+
+  Basically, the code does:
+    X=length*cos(angle)*2
+    Y=length*sin(angle)*126/64
+
+13: Polar to rectangular
+------------------------
+
+  Apparently, this converts a length-and-angle into horizontal and vertical
+  components.
+
+  Input:
+    $7f80-1: angle
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: length
+    $7f85:   ??? (MSB of above?)
+
+  Output:
+    $7f86-8: output X (format bbbbbbbbbbbbbbb.bbbbbbbb)
+    $7f89-b: output Y (format bbbbbbbbbbbbbbb.bbbbbbbb)
+
+  Basically, the code does:
+    X=length*cos(angle)*2
+    Y=length*sin(angle)*2
+
+15: Pythagorean
+---------------
+
+  This is the classic application of the Pythagorean Theorem.
+
+  Input:
+    $7f80-1: input X
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: input Y
+    $7f85:   ??? (MSB of above?)
+
+  Output:
+    $7f80-1: distance
+    $7f82:   ??? (MSB of above?)
+
+  Specifically,
+    distance=sqrt(X**2+Y**2)
+
+1f: atan
+--------
+
+  This calculates the inverse tangent (atan) function.
+
+  Input:
+    $7f80-1: opposite
+    $7f82:   unused?
+    $7f83-4: adjacent
+    $7f85:   unused?
+
+  Output:
+    $7f86-7: output angle
+    $7f88:   ??? (MSB of above?)
+
+                  { 0x80                       if X is 0 and Y>0
+  angle = 0x1ff & { 0x180                      if X is 0 and Y<=0
+                  { atan(Y/X)/(2*PI)*512+0x100 if X<0
+                  { atan(Y/X)/(2*PI)*512       otherwise
+
+22: Trapeziod
+-------------
+
+  Plots a trapezoid with the parallel edges horizontal, and the other edges at
+  specified angles. The X positions of the non-parallel edges are written into
+  into $6800 (left) and $6900 (right). The trapaziod extends downward and
+  rightward from (Source X, Source Y), with the left edge angled at (Angle 1)
+  from vertical and the right at (Angle 2).
+
+  Input:
+    $7f80-1: ScrollX
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: ScrollY
+    $7f85:   ??? (MSB of above?)
+    $7f86-7: SourceX position of upper-left corner
+    $7f88:   ??? (MSB of above?)
+    $7f89-a: SourceY position of upper-left corner
+    $7f8b:   ??? (MSB of above?)
+    $7f8c-d: Angle1 (range 0-0x1ff)
+    $7f8e:   ??? (MSB of above?)
+    $7f8f-0: Angle2 (range 0-0x1ff)
+    $7f91:   ??? (MSB of above?)
+    $7f92:   ??? (LSBs of below?)
+    $7f93-4: Length of top base (B)
+
+  Output:
+    $6800+:  Left edge X positions
+    $6900+:  Right edge X positions
+
+  Coordinates are clipped to the range 0<=x<=255. For emulation, you may want
+  to set the left edge to 1 if both left and right are <0, and the right edge
+  to 254 if both left and right are >255. The real C4 may or may not do this
+  (or it may do something else), as those edge pixels are usually hidden off
+  the edge of the TV screen.
+
+  Description is easiest with a picture:
+    (SourceX-ScrollX, SourceY-ScrollY)
+                                    +----{B}----
+                                   /A1          \A2
+                                  /              \
+
+  Above the source point, left=1 and right=0 (or something to the same effect).
+  Below the source point, formulas for the edges are:
+    left X  = tan(Angle1)*(Y + ScrollY - SourceY) - (ScrollX) + (SourceX)
+    right X = tan(Angle2)*(Y + ScrollY - SourceY) - (ScrollX) + (SourceX) + B
+
+25: Multiply
+------------
+
+  Input:
+    $7f80-2: Multiplicand A
+    $7f83-5: Multiplicand B
+
+  Output:
+    $7f80-2 or $7f80-5: Product
+
+  This seems to multiply the 3-byte word in $7f80 with the 3-byte word in
+  $7f83, and write the result back to $7f80. That's all. MMX2 uses it at that
+  infamous point in the Overdrive Ostrich stage.
+
+2d: Transform Coords
+--------------------
+
+  Transforms and projects coordinates.
+
+  Input:
+    $7f80:   ??? (fractional part of below?)
+    $7f81-2: X
+    $7f83:   ??? (fractional part of below?)
+    $7f84-5: Y
+    $7f86:   ??? (fractional part of below?)
+    $7f87-8: Z
+    $7f89:   X rotation
+    $7f8a:   Y rotation
+    $7f8b:   Z rotation
+    $7f8c-e: ??? (always 001000)
+    $7f8f:   ??? (fractional part of below?)
+    $7f90:   Scale factor
+    $7f91:   ??? (MSB of above?)
+
+  Output:
+    $7f80-1: X
+    $7f82:   ??? (MSB of above?)
+    $7f83-4: Y
+    $7f85:   ??? (MSB of above?)
+
+  Basically, this just rotates and scales a point about the origin and
+  projects it onto the XY plan by throwiung away the Z coordinate. IOW, this
+  is exactly the transformation done by command 00 subcommand 08.
+
+40: Sum
+-------
+
+  This is a testing function. It adds the bytes at $6000-$67ff, and outputs
+  the result to $7f80-1 (maybe $7f80-2, MMX2 doesn't check it).
+
+  Input:
+    $6000+:  Input bytes
+
+  Output:
+    $7f80-1: Sum
+    $7f82:   ??? (MSB of above?)
+
+54: Square
+----------
+
+  This is a function only used for testing. It squares the value in $7f80-2.
+
+  Input:
+    $7f80-2: 24-bit value to square (signed)
+
+  Output:
+    $7f83-8: 48-bit output
+
+5c: Immediate Reg
+-----------------
+
+  This is a testing function. It fills $6000-$602f with the following data:
+
+  Input:
+    none
+
+  Output:
+    $6000-3: $00, $00, $00, $ff
+    $6004-7: $ff, $ff, $00, $ff
+    $6008-b: $00, $00, $00, $ff
+    $600c-f: $ff, $ff, $00, $00
+    $6010-3: $ff, $ff, $00, $00
+    $6014-7: $80, $ff, $ff, $7f
+    $6018-b: $00, $80, $00, $ff
+    $601c-f: $7f, $00, $ff, $7f
+    $6020-3: $ff, $7f, $ff, $ff
+    $6024-7: $00, $00, $01, $ff
+    $6028-b: $ff, $fe, $00, $01
+    $602c-f: $00, $ff, $fe, $00
+
+89: Immediate ROM
+-----------------
+
+  This is a testing function. It sets $7f80-2 to $054336
+
+  Input:
+    none
+
+  Output:
+    $7f80-2: $054336
+
+
+=============================================================================
+HISTORY
+
+Version 1.5:
+ * Actually put a version number on it, and started keeping track of history.

@@ -25,6 +25,7 @@
 - [オープンバス](openbus.md)
 - [割り込み](interrupt/)
     - [IRQ](interrupt/irq.md)
+    - [レジスタ](interrupt/ioreg.md)
 
 ### CPU
 
@@ -93,6 +94,11 @@
 
 - [キー入力](keypad/joypad.md)
 - [キー入力(信号単位)](keypad/signal.md)
+
+## リソース
+
+- [snes-test-roms](https://github.com/pokemium/snes-test-roms)
+- [Anomie's Docs](./others/anomie/)
 
 ## 関連するレポジトリ
 
