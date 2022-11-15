@@ -47,6 +47,7 @@
 - [DMA](memory/dma/)
     - [HDMA](memory/dma/hdma.md)
     - [レジスタ](memory/dma/ioreg.md)
+    - [タイミング(TODO)](memory/dma/timing.md)
 
 ### グラフィック
 

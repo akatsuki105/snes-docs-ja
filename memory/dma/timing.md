@@ -1,5 +1,7 @@
 # DMAの実行タイミング
 
+>**Warning** 信頼性低
+
 TODO([Anomie's Docs](../../others/anomie/timing.txt)を参考に書く予定)
 
 ## メモ(GDMA)
