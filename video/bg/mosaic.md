@@ -6,7 +6,7 @@
 
 (これはGBAのモザイク機能ですが原理は全く同じです)
 
-<img src="https://github.com/pokemium/gba-docs-ja/blob/main/images/bitmap.png?raw=true" />  <img src="https://github.com/pokemium/gba-docs-ja/blob/main/images/mosaic.png?raw=true" />
+<img src="https://github.com/akatsuki105/gba-docs-ja/blob/main/images/bitmap.png?raw=true" />  <img src="https://github.com/akatsuki105/gba-docs-ja/blob/main/images/mosaic.png?raw=true" />
 
 ## 2106h - MOSAIC - モザイク (W)
 

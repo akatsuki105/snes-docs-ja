@@ -98,14 +98,14 @@
 
 ## リソース
 
-- [snes-test-roms](https://github.com/pokemium/snes-test-roms)
+- [snes-test-roms](https://github.com/akatsuki105/snes-test-roms)
 - [Anomie's Docs](./others/anomie/)
 
 ## 関連するレポジトリ
 
-- [gb-docs-ja](https://github.com/pokemium/gb-docs-ja): GameBoyについて
-- [gba-docs-ja](https://github.com/pokemium/gba-docs-ja): GameBoy Advanceについて
-- [nds-docs-ja](https://github.com/pokemium/nds-docs-ja): Nintendo DSについて
+- [gb-docs-ja](https://github.com/akatsuki105/gb-docs-ja): GameBoyについて
+- [gba-docs-ja](https://github.com/akatsuki105/gba-docs-ja): GameBoy Advanceについて
+- [nds-docs-ja](https://github.com/akatsuki105/nds-docs-ja): Nintendo DSについて
 
 ## 参考記事
 
